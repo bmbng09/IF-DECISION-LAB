@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IF Decision Lab: Misi Pengambilan Keputusan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=League+Spartan:wght@600;700;800&family=Lilita+One&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07142B; --bg2:#0B1D3C; --panel:#0F2547; --panel2:#153060; --line:#27487F; --cell:#0A1B38; --head:#12305F;
+  --text:#F3F7FF; --muted:#AFC1DC; --cyan:#27D3F3; --ink:#04202A;
+  --ok:#2EDB9A; --ok-bg:#0B3A30; --bad:#FF9A4D; --bad-bg:#432616; --warn:#FFC857;
+  --yes:#FFD166; --no:#BDA9FF;
+  --ff-head:"League Spartan","Inter","Segoe UI",system-ui,sans-serif;
+  --ff-body:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;
+  --ff-logo:"Lilita One","League Spartan","Inter",sans-serif;
+  color-scheme:dark;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  font-size:clamp(15px, calc(0.9vw + 0.9vh), 36px);
+}
+:root[data-theme="dark"]{color-scheme:dark}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:var(--ff-body);line-height:1.45;overflow:hidden;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;color:inherit;touch-action:manipulation}
+code{font-family:ui-monospace,"Cascadia Mono","SF Mono",Consolas,monospace}
+:focus-visible{outline:.2rem solid #fff;outline-offset:.2rem}
+#app{position:relative;height:100%;display:flex;flex-direction:column}
+.gridbg{position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(39,211,243,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(39,211,243,.07) 1px,transparent 1px);
+  background-size:4.2rem 2.6rem;
+  -webkit-mask-image:radial-gradient(ellipse at 30% 20%,#000 20%,transparent 85%);mask-image:radial-gradient(ellipse at 30% 20%,#000 20%,transparent 85%)}
+.screen{position:relative;z-index:1;flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;padding:clamp(1rem,3vh,2.4rem) clamp(1rem,3vw,3rem)}
+.screen.center{align-items:center;justify-content:center;text-align:center}
+.enter{animation:enter .45s ease both}
+@keyframes enter{from{opacity:0;transform:translateY(.8rem)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:scale(.97) translateY(.5rem)}to{opacity:1;transform:none}}
+@keyframes load{from{width:0}to{width:100%}}
+@keyframes bump{50%{transform:scale(1.15)}}
+
+h1,h2,h3{font-family:var(--ff-head);margin:0;line-height:1.1}
+p{margin:0 0 .8rem}
+.logo{display:inline-grid;place-items:center;width:2.5rem;height:2.5rem;border-radius:.6rem;background:var(--cyan);color:var(--ink);font:400 1.35rem var(--ff-logo)}
+.logo.big{width:6rem;height:6rem;font-size:3.4rem;border-radius:1.3rem;margin-bottom:1.2rem}
+.cellmark{display:inline-block;background:var(--cyan);color:var(--ink);font-family:var(--ff-logo);font-weight:400;padding:0 .25em;border-radius:.18em;margin-right:.15em}
+.chips{display:flex;flex-wrap:wrap;gap:.6rem}
+.chip{display:inline-flex;align-items:center;min-height:2.4rem;padding:0 1rem;border:1px solid var(--line);border-radius:2rem;background:rgba(21,48,96,.7);color:var(--text);font-weight:600;font-size:.95rem}
+.badge{display:inline-block;padding:.3rem .9rem;border-radius:.5rem;background:rgba(39,211,243,.16);border:1px solid var(--cyan);color:var(--cyan);font-weight:700;font-size:.95rem;margin-bottom:.9rem}
+.panel{background:linear-gradient(180deg,var(--panel),var(--bg2));border:2px solid var(--line);border-radius:1.2rem;padding:1.4rem 1.6rem}
+.muted{color:var(--muted)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:3.8rem;min-width:7rem;padding:0 1.6rem;border-radius:1rem;border:2px solid var(--line);background:var(--panel2);font-weight:700;font-size:1.05rem;cursor:pointer;transition:transform .12s,background .12s}
+.btn:active{transform:scale(.97)}
+.btn.pri{background:var(--cyan);border-color:var(--cyan);color:var(--ink)}
+.btn.sec{background:transparent;border-color:#5B7FB8}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover,.btn.sec:hover{border-color:var(--cyan)}
+.btn.xl{min-height:4.6rem;padding:0 2.6rem;font-size:1.3rem;font-family:var(--ff-head);letter-spacing:.02em}
+.btn.sm{min-height:3rem;font-size:.95rem;padding:0 1.1rem}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Splash and home */
+.splash h1{font-size:3rem}.splash p{color:var(--muted)}
+.load{width:min(26rem,70vw);height:.7rem;background:#16315C;border-radius:1rem;overflow:hidden;margin-top:1.2rem}
+.load i{display:block;height:100%;background:var(--cyan);animation:load 1.8s ease-in-out forwards}
+.home{display:grid;grid-template-columns:1fr;gap:2rem;align-content:center}
+@media (min-width:900px){.home{grid-template-columns:1.2fr .8fr;align-items:center}}
+.home h1{font-size:clamp(2.6rem,5.2vw,5.2rem);font-weight:800}
+.home h2{font-size:clamp(1.5rem,2.6vw,2.6rem);font-weight:700;color:var(--cyan);margin:.5rem 0 1rem}
+.home .sub{font-size:1.2rem;color:var(--muted);max-width:34rem;margin-bottom:1.4rem}
+.home-actions{display:flex;flex-wrap:wrap;gap:1rem;margin-top:1.8rem}
+.demo{text-align:center}
+.demo-h{font:700 1.15rem var(--ff-head);margin-bottom:1rem}
+.light{display:inline-flex;flex-direction:column;gap:.8rem;padding:1.1rem;background:#050E1F;border:3px solid var(--line);border-radius:1.6rem;cursor:pointer;min-width:6rem;min-height:12rem}
+.lamp{width:4.2rem;height:4.2rem;border-radius:50%;opacity:.22;transition:opacity .2s,box-shadow .2s}
+.lamp.r{background:#FF5C5C}.lamp.g{background:#3EE08F}
+.lamp.on{opacity:1;box-shadow:0 0 1.6rem currentColor}
+.lamp.r.on{color:#FF5C5C}.lamp.g.on{color:#3EE08F}
+.demo-out{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-top:1.2rem}
+
+/* Briefing */
+.brief{display:grid;grid-template-columns:1fr;gap:1.4rem;align-content:center}
+@media (min-width:900px){.brief{grid-template-columns:1.3fr .7fr}}
+.brief h2{font-size:clamp(1.8rem,3vw,3rem);margin-bottom:1rem}
+.brief p{font-size:1.2rem}
+.brief .q{font:700 1.5rem var(--ff-head);color:var(--cyan);margin:1rem 0 1.4rem}
+.map h3{font-size:1.3rem;margin-bottom:1rem}
+.map ol{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;counter-reset:m}
+.map li{counter-increment:m;display:flex;gap:.8rem;align-items:center;padding:.6rem .8rem;background:var(--cell);border:1px solid var(--line);border-radius:.7rem;font-weight:600}
+.map li::before{content:counter(m);display:grid;place-items:center;flex:none;width:2rem;height:2rem;border-radius:.45rem;background:var(--head);color:var(--cyan);font:700 .95rem var(--ff-head)}
+
+/* HUD */
+.hud{position:relative;z-index:2;display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;padding:.8rem clamp(1rem,3vw,3rem) .4rem}
+.brand{display:flex;align-items:center;gap:.6rem;font:800 1.15rem var(--ff-head)}
+.lvt{flex:1;min-width:11rem}
+.lvt b{display:block;font:700 1.35rem var(--ff-head)}
+.lvt span{color:var(--muted);font-size:.95rem}
+.scorebox{display:flex;align-items:baseline;gap:.6rem;padding:.4rem 1.1rem;border:2px solid var(--line);border-radius:.9rem;background:var(--cell)}
+.scorebox span{color:var(--muted);font-weight:600}
+.scorebox b{font:800 1.8rem var(--ff-head);color:var(--cyan);display:inline-block;min-width:3ch;text-align:right}
+.scorebox b.bump{animation:bump .5s}
+.segs{position:relative;z-index:2;display:flex;align-items:center;gap:.5rem;padding:0 clamp(1rem,3vw,3rem) .5rem}
+.seg{flex:1;height:.6rem;background:#16315C;border-radius:1rem;overflow:hidden}
+.seg b{display:block;height:100%;background:var(--cyan);transition:width .5s}
+.prog{flex:none;color:var(--muted);font-weight:600;font-size:.95rem;margin-left:.5rem}
+
+/* Stage */
+.stage{position:relative;z-index:1;flex:1;min-height:0;overflow:auto;padding:.6rem clamp(1rem,3vw,3rem) 1.2rem}
+.misi{color:var(--muted);font-size:1.05rem;margin-bottom:.9rem}
+.cols{display:grid;grid-template-columns:1fr;gap:1.2rem;max-width:96rem;margin:0 auto}
+@media (min-width:860px){.cols{grid-template-columns:1.05fr 1fr}}
+.solo{max-width:62rem;margin:0 auto;display:grid;gap:1.2rem}
+.stage .misi{max-width:96rem;margin-left:auto;margin-right:auto}
+.q{font:700 1.55rem var(--ff-head);margin-bottom:1rem}
+.big{font:700 1.5rem var(--ff-head);margin-bottom:.8rem}
+.rules{margin:0 0 .6rem;padding-left:1.2rem;font-size:1.15rem}
+.rules li{margin-bottom:.4rem}
+.rv.pop{animation:pop .4s ease both}
+.rv{padding:1.2rem 1.5rem;border:2px solid var(--line);border-radius:1.2rem;background:linear-gradient(180deg,var(--panel),var(--bg2))}
+.statement{font:700 1.7rem var(--ff-head);line-height:1.25}
+.callout{display:inline-block;font:400 1.5rem var(--ff-logo);color:var(--ink);background:var(--cyan);padding:.3rem 1rem;border-radius:.6rem;margin-bottom:1rem}
+.ask{font:700 1.5rem var(--ff-head);color:var(--cyan)}
+
+/* Options */
+.opts{display:grid;gap:.8rem}
+.opt{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:1rem;min-height:4.6rem;padding:.7rem 1.1rem;text-align:left;background:var(--panel);border:2px solid var(--line);border-radius:1rem;font-size:1.2rem;font-weight:600;cursor:pointer;transition:transform .12s,border-color .12s}
+.opt:hover:not(:disabled){border-color:var(--cyan)}
+.opt:active:not(:disabled){transform:scale(.985)}
+.ltr{display:grid;place-items:center;width:2.7rem;height:2.7rem;border-radius:.6rem;background:var(--head);color:var(--cyan);font:700 1.2rem var(--ff-head)}
+.mark{font-size:.95rem;font-weight:700;white-space:nowrap}
+.opt:disabled{cursor:default;color:var(--text)}
+.opt.wrong{background:var(--bad-bg);border-color:var(--bad);color:#FFE3CF}
+.opt.wrong .mark{color:var(--bad)}
+.opt.right{background:var(--ok-bg);border-color:var(--ok)}
+.opt.right .mark{color:var(--ok)}
+
+/* Feedback */
+.fb{margin-top:1rem;padding:1rem 1.3rem;border-radius:1rem;border-left:.5rem solid var(--line);background:var(--cell);font-size:1.1rem;animation:pop .3s ease both}
+.fb.idle{display:none}
+.fb p{margin:0 0 .5rem}
+.fb-h{display:flex;align-items:center;gap:.6rem;font:800 1.45rem var(--ff-head);margin-bottom:.5rem}
+.fb-h i{display:grid;place-items:center;width:2rem;height:2rem;border-radius:50%;font-style:normal;font-size:1.1rem;color:var(--ink)}
+.fb.ok{border-color:var(--ok);background:var(--ok-bg)}.fb.ok .fb-h{color:var(--ok)}.fb.ok .fb-h i{background:var(--ok)}
+.fb.bad{border-color:var(--bad);background:var(--bad-bg)}.fb.bad .fb-h{color:var(--bad)}.fb.bad .fb-h i{background:var(--bad)}
+.fb.reveal{border-color:var(--warn)}.fb.reveal .fb-h{color:var(--warn)}.fb.reveal .fb-h i{background:var(--warn)}
+.hint{color:#FFE9B8;font-weight:500}
+.kv{display:flex;flex-direction:column;gap:.1rem;padding:.55rem .9rem;background:rgba(4,15,36,.55);border:1px solid var(--line);border-radius:.7rem;margin-top:.5rem}
+.kv span{color:var(--muted);font-size:.9rem;font-weight:600}
+.kv b{font:700 1.3rem var(--ff-head)}
+
+/* Spreadsheet look */
+.sheet{display:flex;flex-direction:column;border:2px solid var(--line);border-radius:.9rem;overflow:hidden;background:var(--cell);margin:.4rem 0 1rem;font-variant-numeric:tabular-nums}
+.srow{display:grid;grid-template-columns:3.2rem 1fr 1fr;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line);padding:0;font-size:1.2rem}
+.srow:last-child{border-bottom:0}
+.srow>span{padding:.75rem 1rem;border-right:1px solid var(--line)}
+.srow>span:last-child{border-right:0}
+.srow.head,.srow.th{background:var(--head);font-weight:700}
+.srow.head{color:var(--muted);text-align:center}
+.srow .rn{background:var(--head);color:var(--muted);text-align:center;padding-left:0;padding-right:0}
+button.srow{cursor:pointer;min-height:3.8rem;align-items:center}
+button.srow:hover{background:rgba(39,211,243,.12)}
+.srow.hl{background:rgba(39,211,243,.2);font-weight:700}
+.srow.seen{background:rgba(39,211,243,.1)}
+.rule2{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+.rule2>div{display:flex;flex-direction:column;padding:.7rem 1rem;border-radius:.8rem;border:1px solid var(--line);background:var(--cell)}
+.rule2 span{color:var(--muted);font-weight:600}.rule2 b{font:800 1.3rem var(--ff-head)}
+.bigcell{display:inline-flex;flex-direction:column;padding:.5rem 1.6rem;border:3px solid var(--cyan);background:rgba(39,211,243,.12);border-radius:.9rem;margin-bottom:1rem}
+.bigcell span{color:var(--muted);font-weight:600}.bigcell b{font:800 3.4rem var(--ff-head);line-height:1}
+.rtable{display:grid;gap:.4rem}
+.rtable>div{display:grid;grid-template-columns:8rem 1fr;border:1px solid var(--line);border-radius:.7rem;background:var(--cell);overflow:hidden;font-size:1.1rem}
+.rtable span{padding:.55rem 1rem;background:var(--head);font-weight:700;font-variant-numeric:tabular-nums}
+.rtable b{padding:.55rem 1rem}
+
+/* Patterns and flows */
+.pola{display:grid;gap:.7rem}
+.prow{display:flex;align-items:center;flex-wrap:wrap;gap:.8rem;font-size:1.35rem;font-weight:700}
+.jk{padding:.25rem .8rem;border-radius:.5rem;background:var(--head);color:var(--cyan);font:800 1.1rem var(--ff-head)}
+.pc{font-family:var(--ff-head);font-weight:700}
+.ar{color:var(--cyan);font-weight:800}
+.hs{padding:.35rem 1rem;border-radius:.6rem;color:#08152B;font:800 1.2rem var(--ff-head)}
+.hs.y{background:var(--yes)}.hs.n{background:var(--no)}.hs.k{background:var(--cyan)}
+.flow{display:flex;align-items:stretch;flex-wrap:wrap;gap:.8rem}
+.flow .ar{align-self:center;font-size:1.6rem}
+.node{display:flex;flex-direction:column;justify-content:center;padding:.7rem 1.4rem;min-width:9rem;border:2px solid var(--cyan);border-radius:.9rem;background:rgba(39,211,243,.1)}
+.node b{font:800 1.4rem var(--ff-head)}.node small{color:var(--muted);font-size:.9rem;font-weight:600}
+.vflow{display:grid;gap:.3rem}
+.vrow{display:grid;grid-template-columns:9.5rem 1fr;align-items:center;gap:1rem;padding:.6rem 1rem;border-radius:.8rem;border:2px solid var(--line);background:var(--cell)}
+.vrow b{font:800 1.2rem var(--ff-head)}
+.vrow.k{border-color:var(--cyan)}.vrow.y{border-color:var(--yes)}.vrow.n{border-color:var(--no)}
+.vrow.k b{color:var(--cyan)}.vrow.y b{color:var(--yes)}.vrow.n b{color:var(--no)}
+.vdown{text-align:center;color:var(--muted);font-size:1.3rem;line-height:1}
+.fbar{display:flex;align-items:center;gap:1rem;padding:.8rem 1rem;background:var(--cell);border:2px solid var(--line);border-radius:.9rem;overflow-x:auto}
+.fx{flex:none;padding:.2rem .7rem;border-radius:.4rem;background:var(--head);color:var(--cyan);font:italic 700 1.2rem var(--ff-body)}
+.formula{font-size:1.5rem;font-weight:600;white-space:nowrap}
+.ftok{padding:.1rem .3rem;border-radius:.3rem;border-bottom:.2rem solid transparent}
+.ftok.sel{border-color:#fff;background:rgba(255,255,255,.14)}
+.ftok.k{background:var(--cyan);color:#08152B}.ftok.y{background:var(--yes);color:#08152B}.ftok.n{background:var(--no);color:#08152B}
+.tree{display:grid;gap:.6rem}
+.tnode{padding:.8rem 1rem;border:2px solid var(--cyan);border-radius:.9rem;background:rgba(39,211,243,.07);display:grid;gap:.5rem}
+.tnode .tnode{margin-left:1.6rem;background:rgba(39,211,243,.07)}
+.thead{display:flex;flex-wrap:wrap;align-items:center;gap:.8rem;font-size:1.15rem}
+.thead b{font:800 1.3rem var(--ff-head);color:var(--cyan)}
+.cats{display:flex;flex-wrap:wrap;gap:.6rem;margin:.6rem 0 1rem}
+.cat{padding:.45rem 1.1rem;border-radius:.6rem;background:var(--head);border:1px solid var(--line);font-weight:700;font-size:1.1rem}
+
+/* Cases and match */
+.cases{display:grid;gap:.8rem}
+.case{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;padding:.8rem;border:2px solid var(--line);border-radius:1rem;background:var(--cell);opacity:.7}
+.case.active{opacity:1;border-color:var(--cyan);background:rgba(39,211,243,.1)}
+.case.filled{opacity:1}
+.case-h{grid-column:1/-1;font:700 1.1rem var(--ff-head);color:var(--cyan)}
+.case .kv{margin:0;padding:.4rem .6rem}.case .kv b{font-size:1.1rem}.case .kv span{font-size:.8rem}
+@media (max-width:620px){.case{grid-template-columns:1fr 1fr}}
+.hintline{color:var(--muted);font-size:1.1rem;margin-bottom:.8rem}
+.toks,.roles{display:grid;gap:.8rem}
+.tok,.role{min-height:4.4rem;padding:.6rem 1.1rem;text-align:left;border:2px solid var(--line);border-radius:1rem;background:var(--panel);font-size:1.2rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;justify-content:center}
+.tok code{font-size:1.35rem}
+.tok small,.role small{color:var(--muted);font-weight:600;font-size:.9rem}
+.tok.sel{border-color:#fff;background:var(--panel2)}
+.tok.done,.role.done{cursor:default;opacity:1}
+.tok.done.k,.role.done.k{border-color:var(--cyan)}.tok.done.y,.role.done.y{border-color:var(--yes)}.tok.done.n,.role.done.n{border-color:var(--no)}
+.tok:disabled,.role:disabled{color:var(--text)}
+
+/* Timer */
+.timer{margin-top:1rem;display:grid;gap:.6rem;justify-items:start}
+.tbar{width:100%;height:.8rem;background:#16315C;border-radius:1rem;overflow:hidden}
+.tbar i{display:block;height:100%;background:var(--cyan);transition:width 1s linear}
+.tbar i.low{background:var(--warn)}
+.tnum{color:var(--muted);font-weight:600}
+
+/* Level done, complete */
+.done-card{max-width:46rem;margin:0 auto;text-align:center}
+.done-card h2{font-size:2.4rem;margin-bottom:.8rem}
+.temuan{font-size:1.3rem;margin-bottom:1.2rem}
+.bonus{display:inline-block;padding:.6rem 1.3rem;border-radius:.8rem;font-weight:700;font-size:1.15rem;margin-bottom:1.4rem}
+.bonus.ok{background:var(--ok-bg);border:2px solid var(--ok);color:var(--ok)}
+.bonus.no{background:var(--cell);border:2px solid var(--line);color:var(--muted)}
+.wide{max-width:60rem;width:100%}
+.mc{font-size:clamp(2.4rem,5vw,4.6rem);font-weight:800;color:var(--cyan);margin-bottom:1rem}
+.stats{display:flex;justify-content:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.2rem}
+.stats .kv{min-width:12rem;align-items:center;text-align:center}
+.stats .kv b{font-size:2.6rem;color:var(--cyan)}
+.lead{font-size:1.35rem}
+.huge{font:800 clamp(1.5rem,2.8vw,2.6rem) var(--ff-head);margin:.6rem 0 1.4rem}
+.center .flow{justify-content:center;margin-bottom:1.6rem}
+.discuss{text-align:left;margin:1.2rem 0 1.6rem;font-size:1.2rem}
+.discuss b{color:var(--yes)}
+
+/* Footer bar */
+.bar{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.8rem;padding:.8rem clamp(1rem,3vw,3rem);border-top:2px solid var(--line);background:rgba(7,20,43,.96)}
+.bar .grp{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+.status{flex:1;text-align:center;color:var(--muted);font-weight:600;min-width:10rem}
+@media (max-width:760px){.status{display:none}}
+
+/* Modal */
+.modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:rgba(2,8,20,.78);padding:1rem}
+.modal[hidden]{display:none}
+.mbox{max-width:34rem;width:100%;padding:1.6rem;border:2px solid var(--cyan);border-radius:1.2rem;background:var(--panel);animation:pop .25s ease both}
+.mbox h3{font-size:1.7rem;margin-bottom:.6rem}.mbox p{font-size:1.15rem;color:var(--muted)}
+.mact{display:flex;gap:.8rem;flex-wrap:wrap;margin-top:1.2rem}
+
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mt">
+  <div class="mbox">
+    <h3 id="mt"></h3>
+    <p id="mp"></p>
+    <div class="mact">
+      <button class="btn pri" id="mno" type="button"></button>
+      <button class="btn sec" id="myes" type="button"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   BAGIAN UNTUK GURU
+   Ubah soal, poin, kategori nilai, dan teks umpan balik di sini.
+   Bagian logika permainan ada di bawah garis "MESIN GAME".
+   ============================================================ */
+const CONFIG = {
+  poinBenar: 100,        // poin untuk satu tantangan yang dijawab benar
+  poinBonus: 50,         // bonus jika satu level selesai tanpa kesalahan
+  batasLulus: 75,        // batas nilai untuk Level 2, 3, dan 4
+  timerDetik: 40,        // durasi timer opsional di Level 6
+  timerAwalAktif: false  // true jika timer ingin menyala sejak awal
+};
+
+// Petunjuk bertahap (maksimal 2 tahap)
+const HINTS = [
+  "Bandingkan nilai dengan batas kondisi.",
+  "Apakah nilai memenuhi kondisi yang diberikan?"
+];
+
+// Kategori nilai untuk Level 5 dan Level 6 (urutkan dari nilai tertinggi)
+const KATEGORI = [
+  { nama: "Sangat Baik",     min: 86, max: 100 },
+  { nama: "Baik",            min: 66, max: 85 },
+  { nama: "Cukup",           min: 41, max: 65 },
+  { nama: "Perlu Bimbingan", min: 0,  max: 40 }
+];
+
+// Data siswa untuk Level 2 (baris 2, 3, 4 pada tampilan spreadsheet)
+const SISWA = [
+  { nama: "Andi",  nilai: 82 },
+  { nama: "Budi",  nilai: 68 },
+  { nama: "Citra", nilai: 55 }
+];
+
+// Level 3: nilai pada kartu kasus
+const KASUS_LEVEL3 = [80, 60, 75];
+
+// Level 5: nilai yang ditanyakan, dan urutan pilihan jawaban (indeks KATEGORI)
+const SOAL_LEVEL5 = [
+  { nilai: 88, urutan: [2, 0, 3, 1] },
+  { nilai: 70, urutan: [3, 1, 0, 2] },
+  { nilai: 50, urutan: [1, 3, 2, 0] },
+  { nilai: 30, urutan: [0, 2, 3, 1] }
+];
+
+// Level 6: kasus cepat
+const SOAL_LEVEL6 = [
+  { label: "CASE A", nilai: 90, urutan: [1, 0, 2, 3] },
+  { label: "CASE B", nilai: 72, urutan: [2, 1, 3, 0] },
+  { label: "CASE C", nilai: 35, urutan: [0, 3, 1, 2] }
+];
+
+// Level 4: bagian rumus dan fungsinya
+const RUMUS_K = "B2>=" + CONFIG.batasLulus;
+const RUMUS_Y = '"Lulus"';
+const RUMUS_N = '"Belum Lulus"';
+const PERAN_RUMUS = [               // urutan tampil di kolom kanan
+  { nama: "Hasil jika salah", warna: "n" },
+  { nama: "Kondisi",          warna: "k" },
+  { nama: "Hasil jika benar", warna: "y" }
+];
+const BAGIAN_RUMUS = [              // urutan sesuai rumus
+  { teks: RUMUS_K, peran: 1, info: "<b>" + RUMUS_K + "</b> adalah KONDISI. Bagian inilah yang diuji: benar atau salah?" },
+  { teks: RUMUS_Y, peran: 2, info: "<b>" + RUMUS_Y + "</b> adalah hasil jika kondisi BENAR." },
+  { teks: RUMUS_N, peran: 0, info: "<b>" + RUMUS_N + "</b> adalah hasil jika kondisi SALAH." }
+];
+const HINTS_RUMUS = [
+  "Bagian mana yang berupa perbandingan, dan bagian mana yang berupa hasil?",
+  "Dalam rumus IF, urutannya: kondisi dulu, lalu hasil jika benar, lalu hasil jika salah."
+];
+
+/* ---------- Pembantu tampilan untuk isi level ---------- */
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const kategoriDari = n => KATEGORI.find(k => n >= k.min && n <= k.max);
+const bagi = (total, n, i) => Math.floor(total * (i + 1) / n) - Math.floor(total * i / n);
+
+function polaHTML(rows){
+  return '<div class="pola">' + rows.map(r =>
+    '<div class="prow"><span class="jk">JIKA</span><span class="pc">' + r[0] + '</span><span class="ar" aria-hidden="true">→</span><span class="hs ' + r[2] + '">' + r[1] + '</span></div>'
+  ).join('') + '</div>';
+}
+function flowHTML(items){
+  return '<div class="flow">' + items.map(x =>
+    '<div class="node"><b>' + x[0] + '</b><small>' + x[1] + '</small></div>'
+  ).join('<span class="ar" aria-hidden="true">→</span>') + '</div>';
+}
+function sheetHTML(rows, o){
+  o = o || {};
+  const head = '<div class="srow head" aria-hidden="true"><span class="rn"></span><span>A</span><span>B</span></div>';
+  const h1 = '<div class="srow th"><span class="rn">1</span><span>Nama</span><span>Nilai</span></div>';
+  const body = rows.map((r, i) => {
+    const cls = 'srow' + (o.hl === i ? ' hl' : '') + (o.buttons && o.seen && o.seen[i] ? ' seen' : '');
+    const inner = '<span class="rn">' + (i + 2) + '</span><span>' + esc(r.nama) + '</span><span>' + r.nilai + '</span>';
+    return o.buttons
+      ? '<button type="button" class="' + cls + '" data-act="row" data-i="' + i + '">' + inner + '</button>'
+      : '<div class="' + cls + '">' + inner + '</div>';
+  }).join('');
+  return '<div class="sheet">' + head + h1 + body + '</div>';
+}
+const aturanLulus = () =>
+  '<div class="rule2"><div><span>Nilai &gt;= ' + CONFIG.batasLulus + '</span><b>LULUS</b></div><div><span>Nilai &lt; ' + CONFIG.batasLulus + '</span><b>BELUM LULUS</b></div></div>';
+const tabelKategori = () =>
+  '<div class="rtable">' + KATEGORI.map(k => '<div><span>' + k.min + '–' + k.max + '</span><b>' + k.nama + '</b></div>').join('') + '</div>';
+
+function soalKategori(nilai, urutan, o){
+  o = o || {};
+  const k = kategoriDari(nilai);
+  return {
+    type: "mcq", timed: !!o.timed,
+    scenario: (o.label ? '<div class="badge">' + o.label + '</div><br>' : '') +
+      '<div class="bigcell"><span>Nilai</span><b>' + nilai + '</b></div>' + tabelKategori(),
+    question: "Nilai " + nilai + " masuk kategori apa?",
+    options: urutan.map(i => KATEGORI[i].nama),
+    answer: urutan.indexOf(KATEGORI.indexOf(k)),
+    penjelasan: "Nilai " + nilai + " berada pada rentang " + k.min + "–" + k.max + ", jadi kategorinya <b>" + k.nama + "</b>.",
+    benar: ""
+  };
+}
+function treeHTML(){
+  function node(i){
+    const k = KATEGORI[i];
+    const last = i === KATEGORI.length - 2;
+    const inside = last
+      ? '<div class="thead"><span>Tidak: <b style="color:var(--text);font-family:inherit">' + KATEGORI[i + 1].nama + '</b></span></div>'
+      : node(i + 1);
+    return '<div class="tnode"><div class="thead"><b>IF</b><span>Nilai &gt;= ' + k.min + '?</span><span>Ya: <b style="color:var(--text);font-family:inherit">' + k.nama + '</b></span></div>' + inside + '</div>';
+  }
+  return '<div class="tree">' + node(0) + '</div>';
+}
+function vflowHTML(){
+  return '<div class="vflow">' +
+    '<div class="vrow k"><b>IF</b><span>memeriksa sebuah kondisi</span></div><div class="vdown" aria-hidden="true">↓</div>' +
+    '<div class="vrow k"><b>KONDISI</b><code>' + esc(RUMUS_K) + '</code></div><div class="vdown" aria-hidden="true">↓</div>' +
+    '<div class="vrow y"><b>JIKA BENAR</b><code>' + esc(RUMUS_Y) + '</code></div><div class="vdown" aria-hidden="true">↓</div>' +
+    '<div class="vrow n"><b>JIKA SALAH</b><code>' + esc(RUMUS_N) + '</code></div></div>';
+}
+function formulaBar(){
+  return '<div class="fbar"><span class="fx">fx</span><code class="formula">=IF(' + esc(RUMUS_K) + ',' + esc(RUMUS_Y) + ',' + esc(RUMUS_N) + ')</code></div>';
+}
+
+/* ---------- Isi level ---------- */
+const LEVELS = [
+  { // LEVEL 1
+    judul: "Keputusan Sehari-hari",
+    misi: "Temukan apa yang menentukan sebuah keputusan.",
+    temuan: "Sebuah keputusan bisa bergantung pada kondisi.",
+    steps: [
+      { type: "mcq",
+        scenario: '<p class="big">Besok ada kegiatan olahraga.</p><ul class="rules"><li>Jika hujan, kegiatan dipindahkan ke dalam ruangan.</li><li>Jika tidak hujan, kegiatan dilakukan di lapangan.</li></ul>',
+        question: "Apa keputusan yang tepat jika hari ini hujan?",
+        options: ["Tetap ke lapangan", "Pindah ke dalam ruangan", "Membatalkan semua kegiatan", "Tidak mengambil keputusan"],
+        answer: 1,
+        penjelasan: "Kamu mengambil keputusan berdasarkan sebuah <b>KONDISI</b>.",
+        benar: '<div class="kv"><span>Kondisi</span><b>HUJAN</b></div><div class="kv"><span>Keputusan</span><b>PINDAH KE DALAM RUANGAN</b></div>'
+      },
+      { type: "reveal", stages: [
+        function(){ return '<p class="ask">Perhatikan pola keputusanmu tadi.</p>' + polaHTML([["hujan", "pindah ruangan", "y"], ["tidak", "lapangan", "n"]]); }
+      ] }
+    ]
+  },
+  { // LEVEL 2
+    judul: "Keputusan Berdasarkan Data",
+    misi: "Sekarang keputusan dibuat dari data di tabel.",
+    temuan: "Data bisa menjadi dasar keputusan: data masuk, kondisi diperiksa, keputusan keluar.",
+    steps: [
+      { type: "mcq",
+        scenario: '<p class="big">Guru ingin menentukan status kelulusan berdasarkan nilai.</p>' + sheetHTML(SISWA, { hl: 0 }) + aturanLulus() + '<p class="big" style="margin-top:1rem">' + SISWA[0].nama + ' memperoleh nilai ' + SISWA[0].nilai + '.</p>',
+        question: "Apa keputusan sistem?",
+        options: ["Lulus", "Belum Lulus", "Tidak dapat ditentukan", "Sangat Baik"],
+        answer: 0,
+        penjelasan: "Kamu baru saja melakukan pengambilan keputusan berdasarkan <b>DATA</b> dan <b>KONDISI</b>.",
+        benar: ""
+      },
+      { type: "explore" }
+    ]
+  },
+  { // LEVEL 3
+    judul: "Temukan Polanya",
+    misi: "Pasangkan nilai, kondisi, dan hasil pada setiap kasus.",
+    temuan: "Jika kondisi benar, hasilnya satu. Jika kondisi salah, hasilnya yang lain.",
+    steps: [
+      { type: "cases", kasus: KASUS_LEVEL3, hasil: ["Lulus", "Belum Lulus"] },
+      { type: "reveal", stages: [
+        function(){ return '<p class="ask">Apakah kamu melihat polanya?</p>' + polaHTML([["kondisi benar", "hasil 1", "y"], ["kondisi salah", "hasil 2", "n"]]); },
+        function(){ return '<p class="statement">Spreadsheet dapat melakukan pola keputusan seperti ini secara otomatis.</p><p class="ask" style="margin-top:.8rem">Kalau manusia bisa mengambil keputusan berdasarkan kondisi, apakah komputer dan spreadsheet juga bisa?</p>'; }
+      ] }
+    ]
+  },
+  { // LEVEL 4
+    judul: "Kenali IF",
+    misi: "Baca pola keputusan yang ditulis dalam bahasa spreadsheet.",
+    temuan: "Pola JIKA...MAKA ditulis di spreadsheet dengan fungsi IF yang punya tiga bagian.",
+    steps: [
+      { type: "reveal", stages: [
+        function(){ return '<span class="callout">Inilah ide dasar dari fungsi IF.</span><p class="statement">Pola keputusan yang baru saja kamu lakukan dapat ditulis di spreadsheet dengan fungsi IF.</p><div style="margin-top:1rem">' + formulaBar() + '</div>'; },
+        function(){ return '<p class="ask" style="margin-bottom:.8rem">Setiap bagian rumus punya tugas sendiri.</p>' + vflowHTML(); }
+      ] },
+      { type: "match", bagian: BAGIAN_RUMUS, peran: PERAN_RUMUS, hints: HINTS_RUMUS }
+    ]
+  },
+  { // LEVEL 5
+    judul: "Nested IF Challenge",
+    misi: "Sekarang ada lebih dari dua kemungkinan hasil.",
+    temuan: "Jika ada banyak kemungkinan, satu IF belum cukup. Kita perlu IF yang bertingkat.",
+    steps: SOAL_LEVEL5.map(s => soalKategori(s.nilai, s.urutan)).concat([
+      { type: "reveal", stages: [
+        function(){ return '<p class="statement">Di sini kita tidak hanya memiliki dua kemungkinan.</p><div class="cats">' + KATEGORI.map(k => '<span class="cat">' + k.nama + '</span>').join('') + '</div><p class="ask">Bagaimana jika spreadsheet harus menentukan semuanya secara otomatis?</p>'; },
+        function(){ return '<p class="ask" style="margin-bottom:.8rem">Satu IF diletakkan di dalam IF yang lain.</p>' + treeHTML() + '<p class="statement" style="margin-top:1rem">Ini disebut <span class="cellmark">Nested IF</span>, yaitu fungsi IF yang digunakan secara bertingkat untuk menangani beberapa kemungkinan hasil.</p>'; }
+      ] }
+    ])
+  },
+  { // LEVEL 6
+    judul: "Final Challenge",
+    misi: "Tiga kasus cepat. Timer boleh dinyalakan, boleh tidak.",
+    temuan: "Kamu sudah bisa menentukan keputusan dari beberapa kondisi sekaligus.",
+    steps: SOAL_LEVEL6.map(s => soalKategori(s.nilai, s.urutan, { label: s.label, timed: true }))
+  }
+];
+
+/* ============================================================
+   MESIN GAME (tidak perlu diubah oleh guru)
+   ============================================================ */
+(function(){
+'use strict';
+const $ = s => document.querySelector(s);
+const app = $('#app');
+
+const S = { screen: 'splash', lv: 0, step: 0, score: 0, shown: 0, lvMistakes: 0, flawless: 0, bonusGot: false, timerOn: CONFIG.timerAwalAktif, light: 'merah' };
+let T = null;
+let tmr = null;
+let modalYes = null;
+
+const cur = () => LEVELS[S.lv].steps[S.step];
+
+function resetT(){
+  const st = cur();
+  T = { atts: {}, hint: 0, fb: null, sdone: false, wrong: [], remain: CONFIG.timerDetik, expired: false, stage: 0, sel: null, solved: {}, explored: {}, pickRow: null, ci: 0, ph: 0, res: [] };
+  if (st.type === 'cases') T.res = st.kasus.map(() => ({ k: null, d: null }));
+  if (st.type === 'reveal' || st.type === 'explore') T.sdone = true;
+}
+function resetSub(){ T.hint = 0; T.fb = null; T.sdone = false; T.wrong = []; }
+function resetAll(){
+  S.score = 0; S.shown = 0; S.lv = 0; S.step = 0; S.lvMistakes = 0; S.flawless = 0; S.bonusGot = false;
+}
+function maxScore(){
+  let t = 0;
+  LEVELS.forEach(L => L.steps.forEach(st => {
+    if (st.type === 'mcq') t += CONFIG.poinBenar;
+    if (st.type === 'cases') t += CONFIG.poinBenar * st.kasus.length;
+    if (st.type === 'match') t += CONFIG.poinBenar;
+  }));
+  return t + CONFIG.poinBonus * LEVELS.length;
+}
+
+/* ---------- Timer ---------- */
+function stopTimer(){ if (tmr) { clearInterval(tmr); tmr = null; } }
+function startTimer(){
+  stopTimer();
+  if (S.screen !== 'play') return;
+  const st = cur();
+  if (!st || !st.timed || !S.timerOn || T.sdone || T.expired) return;
+  tmr = setInterval(function(){
+    T.remain--;
+    const f = $('#tfill'), n = $('#tnum');
+    if (f) { f.style.width = (Math.max(T.remain, 0) / CONFIG.timerDetik * 100) + '%'; if (T.remain <= 10) f.classList.add('low'); }
+    if (n) n.textContent = Math.max(T.remain, 0);
+    if (T.remain <= 0) { stopTimer(); T.expired = true; render(false); }
+  }, 1000);
+}
+
+/* ---------- Penilaian ---------- */
+function judge(ok, poin, key){
+  if (ok) { S.score += poin; return 'ok'; }
+  T.atts[key] = (T.atts[key] || 0) + 1;
+  S.lvMistakes++;
+  if (T.atts[key] >= 2) return 'reveal';
+  T.hint = Math.max(T.hint, 1);
+  T.fb = { t: 'bad' };
+  return 'bad';
+}
+
+/* ---------- Tampilan ---------- */
+function go(screen, anim){ stopTimer(); S.screen = screen; render(anim !== false); }
+function startStep(){ stopTimer(); resetT(); S.screen = 'play'; render(true); startTimer(); }
+function startLevel(){ S.lvMistakes = 0; S.step = 0; startStep(); }
+
+function progressPct(){
+  const total = LEVELS.reduce((a, L) => a + L.steps.length, 0);
+  let done = 0;
+  for (let i = 0; i < S.lv; i++) done += LEVELS[i].steps.length;
+  done += S.screen === 'levelDone' ? LEVELS[S.lv].steps.length : S.step;
+  return Math.round(done / total * 100);
+}
+function hudHTML(){
+  const L = LEVELS[S.lv];
+  const segs = LEVELS.map((l, i) => {
+    const w = i < S.lv ? 100 : (i === S.lv ? (S.screen === 'levelDone' ? 100 : Math.round(S.step / l.steps.length * 100)) : 0);
+    return '<i class="seg"><b style="width:' + w + '%"></b></i>';
+  }).join('');
+  return '<header class="hud"><div class="brand"><span class="logo">IF</span><span>Decision Lab</span></div>' +
+    '<div class="lvt"><b>Level ' + (S.lv + 1) + ' dari ' + LEVELS.length + '</b><span>' + L.judul + '</span></div>' +
+    '<div class="scorebox" aria-live="polite"><span>Skor</span><b id="score">' + S.shown + '</b></div>' +
+    '<button class="btn sec sm" type="button" data-act="fs">Layar penuh</button></header>' +
+    '<div class="segs" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + progressPct() + '" aria-label="Progres misi">' + segs + '<span class="prog">Progres ' + progressPct() + '%</span></div>';
+}
+
+function footerHTML(){
+  const st = S.screen === 'play' ? cur() : null;
+  let nextLabel = 'Lanjut', canNext = false, canHint = false, status = '';
+  if (st) {
+    const isLast = S.step === LEVELS[S.lv].steps.length - 1;
+    canNext = T.sdone;
+    if (st.type === 'mcq' || st.type === 'cases') {
+      canHint = !T.sdone && T.hint < 2;
+      status = T.sdone ? 'Jawabanmu sudah diperiksa. Tekan Lanjut.' : 'Pilih satu jawaban.';
+    } else if (st.type === 'match') {
+      canHint = T.sel !== null && !T.sdone && T.hint < 2;
+      status = T.sdone ? 'Semua bagian sudah dipasangkan.' : (T.sel === null ? 'Ketuk satu bagian rumus.' : 'Sekarang ketuk fungsinya.');
+    } else if (st.type === 'explore') {
+      status = 'Ketuk nama siswa untuk mencoba.';
+    } else if (st.type === 'reveal') {
+      status = T.stage < st.stages.length - 1 ? 'Ketuk tombol untuk melihat lanjutannya.' : '';
+      if (T.stage < st.stages.length - 1) nextLabel = 'Tampilkan lanjutannya';
+    }
+    if (isLast && !(st.type === 'reveal' && T.stage < st.stages.length - 1)) {
+      const lastCase = st.type === 'cases' ? (T.ci === st.kasus.length - 1 && T.ph === 1) : true;
+      if (lastCase) nextLabel = S.lv === LEVELS.length - 1 ? 'Selesai' : 'Selesaikan level';
+    }
+  }
+  const right = st
+    ? '<button class="btn sec" type="button" data-act="hint"' + (canHint ? '' : ' disabled') + '>Petunjuk (' + (T ? T.hint : 0) + '/2)</button>' +
+      '<button class="btn pri" type="button" data-act="next"' + (canNext ? '' : ' disabled') + '>' + nextLabel + '</button>'
+    : '';
+  return '<footer class="bar"><div class="grp"><button class="btn ghost" type="button" data-act="back">Kembali</button>' +
+    '<button class="btn ghost" type="button" data-act="reset">ULANGI MISI</button></div>' +
+    '<div class="status" aria-live="polite">' + status + '</div><div class="grp">' + right + '</div></footer>';
+}
+
+function hintsHTML(st){
+  const hs = st.hints || HINTS; let o = '';
+  for (let i = 0; i < T.hint; i++) o += '<p class="hint"><b>Petunjuk ' + (i + 1) + '.</b> ' + hs[i] + '</p>';
+  return o;
+}
+function fbHTML(st){
+  const f = T.fb;
+  if (!f) return T.hint ? '<div class="fb" aria-live="polite">' + hintsHTML(st) + '</div>' : '<div class="fb idle" aria-live="polite"></div>';
+  if (f.t === 'ok') return '<div class="fb ok" aria-live="polite"><div class="fb-h"><i aria-hidden="true">✓</i>BENAR!</div>' + f.html + '</div>';
+  if (f.t === 'reveal') return '<div class="fb reveal" aria-live="polite"><div class="fb-h"><i aria-hidden="true">!</i>Ini jawaban yang tepat</div>' + f.html + '</div>';
+  if (f.t === 'info') return '<div class="fb" aria-live="polite"><p>' + f.html + '</p></div>';
+  return '<div class="fb bad" aria-live="polite"><div class="fb-h"><i aria-hidden="true">✕</i>BELUM TEPAT.</div><p>Perhatikan kembali kondisi yang diberikan.</p>' + hintsHTML(st) + '</div>';
+}
+
+function optsHTML(options, answerIdx){
+  return '<div class="opts" role="group" aria-label="Pilihan jawaban">' + options.map((o, i) => {
+    const isWrong = T.wrong.indexOf(i) >= 0;
+    const isRight = T.sdone && i === answerIdx;
+    const cls = 'opt' + (isWrong ? ' wrong' : '') + (isRight ? ' right' : '');
+    const mark = isWrong ? '✕ Salah' : (isRight ? '✓ Jawaban benar' : '');
+    return '<button type="button" class="' + cls + '" data-act="opt" data-i="' + i + '"' + ((T.sdone || isWrong) ? ' disabled' : '') + '>' +
+      '<span class="ltr" aria-hidden="true">' + 'ABCD'[i] + '</span><span>' + esc(o) + '</span><span class="mark">' + mark + '</span></button>';
+  }).join('') + '</div>';
+}
+
+function timerHTML(){
+  const on = S.timerOn; let body = '';
+  if (on) {
+    const pct = Math.max(T.remain, 0) / CONFIG.timerDetik * 100;
+    body = '<div class="tbar"><i id="tfill" class="' + (T.remain <= 10 ? 'low' : '') + '" style="width:' + pct + '%"></i></div><div class="tnum"><b id="tnum">' + Math.max(T.remain, 0) + '</b> detik</div>';
+  }
+  if (T.expired && !T.sdone) body += '<div class="fb"><p><b>Waktu habis.</b> Tidak ada pengurangan poin. Baca soalnya lagi, lalu coba kembali.</p><button type="button" class="btn sec sm" data-act="retimer">Mulai ulang timer</button></div>';
+  return '<div class="timer"><button type="button" class="btn sec sm" data-act="timer" aria-pressed="' + on + '">Timer ' + CONFIG.timerDetik + ' detik: ' + (on ? 'Hidup' : 'Mati') + '</button>' + body + '</div>';
+}
+
+function viewMcq(st){
+  return '<div class="cols"><section class="panel">' + st.scenario + (st.timed ? timerHTML() : '') + '</section>' +
+    '<section><h3 class="q">' + st.question + '</h3>' + optsHTML(st.options, st.answer) + fbHTML(st) + '</section></div>';
+}
+
+function viewCases(st){
+  const b = CONFIG.batasLulus;
+  const cards = st.kasus.map((n, i) => {
+    const r = T.res[i];
+    return '<div class="case' + (i === T.ci ? ' active' : '') + (r.d ? ' filled' : '') + '"><div class="case-h">Kasus ' + (i + 1) + '</div>' +
+      '<div class="kv"><span>Nilai</span><b>' + n + '</b></div>' +
+      '<div class="kv"><span>Kondisi</span><b>&gt;=' + b + '</b></div>' +
+      '<div class="kv"><span>Terpenuhi?</span><b>' + (r.k || '?') + '</b></div>' +
+      '<div class="kv"><span>Hasil</span><b>' + (r.d ? esc(r.d).toUpperCase() : '?') + '</b></div></div>';
+  }).join('');
+  const n = st.kasus[T.ci], bener = n >= b;
+  const q = T.ph === 0 ? 'Apakah nilai ' + n + ' memenuhi kondisi nilai >= ' + b + '?' : 'Kondisinya ' + (bener ? 'benar' : 'salah') + '. Apa keputusannya?';
+  const options = T.ph === 0 ? ['Benar, kondisi terpenuhi', 'Salah, kondisi tidak terpenuhi'] : st.hasil;
+  return '<div class="cols"><section class="panel"><p class="hintline">Lengkapi satu kartu kasus demi satu kartu.</p><div class="cases">' + cards + '</div></section>' +
+    '<section><h3 class="q">' + esc(q) + '</h3>' + optsHTML(options, bener ? 0 : 1) + fbHTML(st) + '</section></div>';
+}
+
+function viewMatch(st){
+  const toks = st.bagian.map((b, i) => {
+    const solved = !!T.solved[i];
+    const role = st.peran[b.peran];
+    return '<button type="button" class="tok' + (T.sel === i ? ' sel' : '') + (solved ? ' done ' + role.warna : '') + '" data-act="tok" data-i="' + i + '"' + (solved ? ' disabled' : '') + '>' +
+      '<code>' + esc(b.teks) + '</code>' + (solved ? '<small>✓ ' + role.nama + '</small>' : '<small>' + (T.sel === i ? 'Terpilih. Ketuk fungsinya.' : 'Ketuk untuk memilih') + '</small>') + '</button>';
+  }).join('');
+  const formula = '<div class="fbar"><span class="fx">fx</span><code class="formula">=IF(' + st.bagian.map((b, i) => {
+    const s = !!T.solved[i];
+    return '<span class="ftok' + (T.sel === i ? ' sel' : '') + (s ? ' ' + st.peran[b.peran].warna : '') + '">' + esc(b.teks) + '</span>';
+  }).join(',') + ')</code></div>';
+  const roles = st.peran.map((r, j) => {
+    const idx = st.bagian.findIndex((b, i) => b.peran === j && T.solved[i]);
+    const done = idx >= 0;
+    return '<button type="button" class="role' + (done ? ' done ' + r.warna : '') + '" data-act="role" data-j="' + j + '"' + (done ? ' disabled' : '') + '>' +
+      '<span>' + r.nama + '</span><small>' + (done ? '✓ dipasangkan dengan ' + esc(st.bagian[idx].teks) : 'Ketuk untuk memasangkan') + '</small></button>';
+  }).join('');
+  let extra = '';
+  if (T.sdone) extra = '<div class="fb ok"><div class="fb-h"><i aria-hidden="true">✓</i>Semua bagian terpasang</div><p>IF memeriksa kondisi, lalu memilih hasil jika benar atau hasil jika salah.</p></div>';
+  return '<div class="cols"><section class="panel">' + formula + '<p class="hintline" style="margin-top:1rem">Ketuk satu bagian rumus, lalu ketuk fungsinya di kolom kanan.</p><div class="toks">' + toks + '</div></section>' +
+    '<section><h3 class="q">Apa fungsi bagian ini?</h3><div class="roles">' + roles + '</div>' + (T.sdone ? extra : fbHTML(st)) + '</section></div>';
+}
+
+function viewExplore(){
+  const B = CONFIG.batasLulus;
+  let result = '<div class="fb"><p>Ketuk salah satu nama untuk melihat keputusan sistem.</p></div>';
+  if (T.pickRow !== null) {
+    const s = SISWA[T.pickRow], ok = s.nilai >= B;
+    result = '<div class="fb ok"><div class="fb-h"><i aria-hidden="true">✓</i>' + esc(s.nama) + '</div>' +
+      '<div class="kv"><span>Data</span><b>Nilai ' + s.nilai + '</b></div>' +
+      '<div class="kv"><span>Kondisi: nilai &gt;= ' + B + '</span><b>' + (ok ? 'BENAR' : 'SALAH') + '</b></div>' +
+      '<div class="kv"><span>Keputusan</span><b>' + (ok ? 'LULUS' : 'BELUM LULUS') + '</b></div></div>';
+  }
+  return '<div class="cols"><section class="panel"><p class="hintline">Coba siswa yang lain. Sistem memakai aturan yang sama.</p>' + sheetHTML(SISWA, { buttons: true, seen: T.explored }) + aturanLulus() + result + '</section>' +
+    '<section class="panel"><h3 class="q">Pola yang terjadi</h3>' + polaHTML([['nilai &gt;= ' + B, 'LULUS', 'y'], ['nilai &lt; ' + B, 'BELUM LULUS', 'n']]) +
+    '<h3 class="q" style="margin-top:1.4rem">Alur keputusannya</h3>' + flowHTML([['DATA', 'nilai siswa'], ['KONDISI', 'nilai >= ' + B + '?'], ['KEPUTUSAN', 'lulus atau belum']]) + '</section></div>';
+}
+
+function viewReveal(st){
+  return '<div class="solo">' + st.stages.slice(0, T.stage + 1).map((h, i) =>
+    '<div class="rv' + (i === T.stage ? ' pop' : '') + '">' + (typeof h === 'function' ? h() : h) + '</div>').join('') + '</div>';
+}
+
+function stageHTML(anim){
+  const L = LEVELS[S.lv], st = cur();
+  let body = '';
+  if (st.type === 'mcq') body = viewMcq(st);
+  else if (st.type === 'cases') body = viewCases(st);
+  else if (st.type === 'match') body = viewMatch(st);
+  else if (st.type === 'explore') body = viewExplore();
+  else if (st.type === 'reveal') body = viewReveal(st);
+  return '<main class="stage" id="stage"><div class="' + (anim ? 'enter' : '') + '"><p class="misi">Misi: ' + L.misi + '</p>' + body + '</div></main>';
+}
+
+function levelDoneHTML(){
+  const L = LEVELS[S.lv], last = S.lv === LEVELS.length - 1;
+  const bonus = S.bonusGot
+    ? '<div class="bonus ok">✓ Bonus +' + CONFIG.poinBonus + ' poin: level selesai tanpa kesalahan</div>'
+    : '<div class="bonus no">Bonus belum didapat. Tidak apa-apa, kesalahan membantu kita belajar.</div>';
+  return '<main class="stage" id="stage"><div class="done-card enter rv"><h2>Level ' + (S.lv + 1) + ' selesai</h2>' +
+    '<p class="muted">' + L.judul + '</p><p class="temuan">Yang kamu temukan: ' + L.temuan + '</p>' + bonus + '<br>' +
+    '<button type="button" class="btn pri xl" data-act="nextlevel">' + (last ? 'Selesai' : 'Lanjut ke Level ' + (S.lv + 2)) + '</button></div></main>';
+}
+
+function render(anim){
+  if (anim === undefined) anim = true;
+  const old = $('#stage'); const keep = old ? old.scrollTop : 0;
+  let html = '';
+  const sc = S.screen;
+  if (sc === 'splash') {
+    html = '<section class="screen center splash enter"><div class="logo big">IF</div><h1>IF Decision Lab</h1><p>Menyiapkan laboratorium keputusan</p><div class="load" aria-hidden="true"><i></i></div></section>';
+  } else if (sc === 'home') {
+    const merah = S.light === 'merah';
+    html = '<section class="screen home enter"><div><h1><span class="cellmark">IF</span> Decision Lab</h1><h2>Misi Pengambilan Keputusan</h2>' +
+      '<p class="sub">Jadilah Decision Analyst dan bantu sistem mengambil keputusan dari data dan kondisi.</p>' +
+      '<div class="chips"><span class="chip">Informatika</span><span class="chip">Kelas VIII</span><span class="chip">Analisis Data</span><span class="chip">SMP Yuppentek 1 Legok</span></div>' +
+      '<div class="home-actions"><button type="button" class="btn pri xl" data-act="start">MULAI MISI</button><button type="button" class="btn sec" data-act="fs">Layar penuh</button></div></div>' +
+      '<aside class="panel demo"><div class="demo-h">Coba dulu: ketuk lampu lalu lintas</div>' +
+      '<button type="button" class="light" data-act="light" aria-label="Ganti lampu. Sekarang lampu ' + S.light + '"><span class="lamp r' + (merah ? ' on' : '') + '"></span><span class="lamp g' + (!merah ? ' on' : '') + '"></span></button>' +
+      '<div class="demo-out"><div class="kv"><span>Kondisi</span><b>Lampu ' + S.light + '</b></div><div class="kv"><span>Keputusan</span><b>' + (merah ? 'BERHENTI' : 'JALAN') + '</b></div></div></aside></section>';
+  } else if (sc === 'brief') {
+    html = '<section class="screen brief enter"><div class="panel"><span class="badge">Peranmu: Decision Analyst</span><h2>Selamat datang di IF Decision Lab!</h2>' +
+      '<p>Hari ini kamu akan menjadi Decision Analyst.</p><p>Tugasmu adalah membantu sistem menentukan keputusan berdasarkan data dan kondisi.</p>' +
+      '<p>Ternyata, banyak keputusan yang kita buat setiap hari memiliki pola yang sama:</p>' +
+      '<div style="margin:.4rem 0 1rem">' + polaHTML([['kondisi terpenuhi', 'lakukan sesuatu', 'y'], ['tidak', 'lakukan pilihan lain', 'n']]) + '</div>' +
+      '<p class="q">Bisakah kamu menemukan pola tersebut?</p>' +
+      '<div class="grp" style="display:flex;gap:.8rem;flex-wrap:wrap"><button type="button" class="btn pri xl" data-act="begin">Mulai Level 1</button><button type="button" class="btn ghost" data-act="tohome">Kembali</button></div></div>' +
+      '<aside class="panel map"><h3>Peta misi</h3><ol>' + LEVELS.map(L => '<li>' + L.judul + '</li>').join('') + '</ol></aside></section>';
+  } else if (sc === 'play') {
+    html = hudHTML() + stageHTML(anim) + footerHTML();
+  } else if (sc === 'levelDone') {
+    html = hudHTML() + levelDoneHTML() + footerHTML();
+  } else if (sc === 'complete') {
+    html = '<section class="screen center enter"><div class="panel wide"><h1 class="mc">MISSION COMPLETE</h1>' +
+      '<div class="stats"><div class="kv"><span>Skor akhir</span><b>' + S.score + '</b><span>dari ' + maxScore() + ' poin</span></div>' +
+      '<div class="kv"><span>Level tanpa kesalahan</span><b>' + S.flawless + '</b><span>dari ' + LEVELS.length + ' level</span></div></div>' +
+      '<p class="lead">Kamu baru saja melakukan sesuatu yang sangat penting dalam Informatika.</p>' +
+      '<p class="huge">MEMBUAT KEPUTUSAN BERDASARKAN KONDISI.</p>' +
+      flowHTML([['DATA', 'informasi yang diperiksa'], ['KONDISI', 'aturan yang diuji'], ['KEPUTUSAN', 'hasil yang dipilih']]) +
+      '<button type="button" class="btn pri xl" data-act="toreflect">Lanjut ke refleksi</button></div></section>';
+  } else if (sc === 'reflect') {
+    html = '<section class="screen center enter"><div class="panel wide"><h2 style="font-size:2.2rem;margin-bottom:1rem">Refleksi</h2>' +
+      flowHTML([['DATA', 'informasi yang diperiksa'], ['KONDISI', 'aturan yang diuji'], ['KEPUTUSAN', 'hasil yang dipilih']]) +
+      '<p class="huge" style="font-size:clamp(1.3rem,2.3vw,2.1rem)">Kalau komputer dapat memproses data dan kondisi, bagaimana cara kita memberi instruksi agar komputer mengambil keputusan secara otomatis?</p>' +
+      '<div class="discuss panel"><b>Diskusikan 1 menit.</b> Sebutkan satu keputusan lain yang kamu buat hari ini dengan pola JIKA...MAKA.</div>' +
+      '<button type="button" class="btn pri xl" data-act="tobridge">LANJUT KE MATERI IF</button></div></section>';
+  } else if (sc === 'bridge') {
+    html = '<section class="screen center enter"><div class="panel wide"><h2 style="font-size:2.4rem;margin-bottom:1rem">Selanjutnya</h2>' +
+      '<p class="lead">Pada pembelajaran berikutnya, kita akan mempelajari fungsi logika IF, AND, OR, dan Nested IF pada spreadsheet.</p>' +
+      '<div class="chips" style="justify-content:center;margin:1.2rem 0 1.8rem"><span class="chip">IF</span><span class="chip">AND</span><span class="chip">OR</span><span class="chip">Nested IF</span></div>' +
+      '<button type="button" class="btn sec xl" data-act="again">Mulai Lagi</button></div></section>';
+  }
+  app.innerHTML = '<div class="gridbg"></div>' + html;
+  const stage = $('#stage');
+  if (stage && !anim) stage.scrollTop = keep;
+  animateScore();
+  if (sc === 'play' && !tmr) startTimer();
+  if (sc !== 'play') stopTimer();
+}
+
+function animateScore(){
+  const el = $('#score'); if (!el) return;
+  const from = S.shown, to = S.score;
+  S.shown = to;
+  if (from === to) { el.textContent = to; return; }
+  el.classList.add('bump');
+  const t0 = performance.now(), d = 600;
+  (function f(t){
+    const p = Math.min(1, (t - t0) / d);
+    el.textContent = Math.round(from + (to - from) * p);
+    if (p < 1) requestAnimationFrame(f); else { el.textContent = to; el.classList.remove('bump'); }
+  })(t0);
+}
+
+/* ---------- Navigasi ---------- */
+function advanceStep(){
+  const L = LEVELS[S.lv];
+  if (S.step < L.steps.length - 1) { S.step++; startStep(); return; }
+  S.bonusGot = S.lvMistakes === 0;
+  if (S.bonusGot) { S.score += CONFIG.poinBonus; S.flawless++; }
+  stopTimer();
+  S.screen = 'levelDone'; render(true);
+}
+function next(){
+  const st = cur();
+  if (st.type === 'cases') {
+    if (T.ph === 0) { T.ph = 1; resetSub(); render(false); return; }
+    if (T.ci < st.kasus.length - 1) { T.ci++; T.ph = 0; resetSub(); render(false); return; }
+  }
+  if (st.type === 'reveal' && T.stage < st.stages.length - 1) { T.stage++; render(false); return; }
+  advanceStep();
+}
+
+function ask(title, text, yesLabel, noLabel, onYes){
+  $('#mt').textContent = title; $('#mp').textContent = text;
+  $('#myes').textContent = yesLabel; $('#mno').textContent = noLabel;
+  modalYes = onYes; $('#modal').hidden = false; $('#mno').focus();
+}
+function closeModal(){ $('#modal').hidden = true; modalYes = null; }
+$('#mno').addEventListener('click', closeModal);
+$('#myes').addEventListener('click', function(){ const f = modalYes; closeModal(); if (f) f(); });
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && !$('#modal').hidden) closeModal(); });
+
+function toggleFs(){
+  try {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+  } catch (err) { /* layar penuh tidak tersedia */ }
+}
+
+/* ---------- Aksi ---------- */
+function onOption(i){
+  const st = cur();
+  if (T.sdone) return;
+  if (st.type === 'mcq') {
+    const r = judge(i === st.answer, CONFIG.poinBenar, 'q');
+    const ex = '<p>' + st.penjelasan + '</p>' + (st.benar || '');
+    if (r === 'ok') { T.sdone = true; T.fb = { t: 'ok', html: ex }; }
+    else if (r === 'reveal') { T.wrong.push(i); T.sdone = true; T.fb = { t: 'reveal', html: '<p>Jawaban yang benar: <b>' + esc(st.options[st.answer]) + '</b>.</p>' + ex }; }
+    else T.wrong.push(i);
+    if (T.sdone) stopTimer();
+  } else if (st.type === 'cases') {
+    const n = st.kasus[T.ci], b = CONFIG.batasLulus, bener = n >= b, correct = bener ? 0 : 1;
+    const r = judge(i === correct, bagi(CONFIG.poinBenar, 2, T.ph), T.ci + ':' + T.ph);
+    const hasil = bener ? st.hasil[0] : st.hasil[1];
+    const msg = T.ph === 0
+      ? '<p>Nilai ' + n + ' ' + (bener ? 'lebih besar atau sama dengan' : 'lebih kecil dari') + ' ' + b + ', jadi kondisi <b>' + (bener ? 'BENAR' : 'SALAH') + '</b>.</p>'
+      : '<p>Kondisi ' + (bener ? 'benar' : 'salah') + ', jadi hasilnya <b>' + esc(hasil) + '</b>.</p>';
+    if (r === 'ok' || r === 'reveal') {
+      T.sdone = true;
+      if (T.ph === 0) T.res[T.ci].k = bener ? 'BENAR' : 'SALAH'; else T.res[T.ci].d = hasil;
+      T.fb = r === 'ok' ? { t: 'ok', html: msg } : { t: 'reveal', html: '<p>Jawaban yang tepat: <b>' + (T.ph === 0 ? (bener ? 'Benar' : 'Salah') : esc(hasil)) + '</b>.</p>' + msg };
+      if (r === 'reveal') T.wrong.push(i);
+    } else T.wrong.push(i);
+  }
+  render(false);
+}
+
+function onToken(i){
+  if (T.solved[i] || T.sdone) return;
+  T.sel = i; T.hint = 0; T.fb = null; render(false);
+}
+function onRole(j){
+  const st = cur();
+  if (T.sdone) return;
+  if (T.sel === null) { T.fb = { t: 'info', html: 'Ketuk salah satu bagian rumus lebih dulu.' }; render(false); return; }
+  const i = T.sel, b = st.bagian[i];
+  const before = Object.keys(T.solved).length;
+  const r = judge(b.peran === j, bagi(CONFIG.poinBenar, st.bagian.length, before), 'm' + i);
+  if (r === 'ok') { T.solved[i] = true; T.fb = { t: 'ok', html: '<p>' + b.info + '</p>' }; T.sel = null; T.hint = 0; }
+  else if (r === 'reveal') { T.solved[i] = true; T.fb = { t: 'reveal', html: '<p>' + b.info + '</p>' }; T.sel = null; T.hint = 0; }
+  if (Object.keys(T.solved).length === st.bagian.length) T.sdone = true;
+  render(false);
+}
+
+app.addEventListener('click', function(e){
+  const el = e.target.closest('[data-act]');
+  if (!el || el.disabled) return;
+  const a = el.dataset.act;
+  switch (a) {
+    case 'start': go('brief'); break;
+    case 'tohome': go('home'); break;
+    case 'begin': resetAll(); S.lv = 0; startLevel(); break;
+    case 'fs': toggleFs(); break;
+    case 'light': S.light = S.light === 'merah' ? 'hijau' : 'merah'; render(false); break;
+    case 'opt': onOption(+el.dataset.i); break;
+    case 'tok': onToken(+el.dataset.i); break;
+    case 'role': onRole(+el.dataset.j); break;
+    case 'row': T.pickRow = +el.dataset.i; T.explored[T.pickRow] = true; render(false); break;
+    case 'hint': if (T.hint < 2) { T.hint++; render(false); } break;
+    case 'next': if (T.sdone) next(); break;
+    case 'nextlevel':
+      if (S.lv < LEVELS.length - 1) { S.lv++; startLevel(); } else go('complete');
+      break;
+    case 'timer':
+      S.timerOn = !S.timerOn; T.remain = CONFIG.timerDetik; T.expired = false;
+      if (S.timerOn) startTimer(); else stopTimer();
+      render(false); break;
+    case 'retimer': T.remain = CONFIG.timerDetik; T.expired = false; render(false); startTimer(); break;
+    case 'back':
+      ask('Kembali ke beranda?', 'Skor dan progres misi akan dihapus.', 'Ya, kembali', 'Tetap di sini', function(){ resetAll(); go('home'); });
+      break;
+    case 'reset':
+      ask('Ulangi misi dari awal?', 'Skor kembali ke 0 dan kamu mulai lagi dari Level 1.', 'Ya, ulangi', 'Batal', function(){ resetAll(); startLevel(); });
+      break;
+    case 'toreflect': go('reflect'); break;
+    case 'tobridge': go('bridge'); break;
+    case 'again': resetAll(); go('home'); break;
+  }
+});
+
+/* ---------- Mulai ---------- */
+render(true);
+setTimeout(function(){ if (S.screen === 'splash') go('home'); }, 2000);
+})();
+</script>
+</body>
+</html>
